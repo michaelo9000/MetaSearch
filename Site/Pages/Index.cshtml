@@ -1,0 +1,121 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <form class="container-fluid">
+        <div class="row">
+            <div class="col">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon5">Of the genre</span>
+                    </div>
+                    <select class="form-control" asp-for="GenreOne" asp-items="Model.Genres" aria-describedby="basic-addon5">
+                        <option value="">- genre one -</option>/>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon1">Released after</span>
+                    </div>
+                    <input class="form-control" type="number" asp-for="YearLower" placeholder="1970" aria-describedby="basic-addon1" />
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon3">Score better than</span>
+                    </div>
+                    <input class="form-control" type="number" asp-for="ScoreLower" placeholder="70" aria-describedby="basic-addon3" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon6">and</span>
+                    </div>
+                    <select class="form-control" asp-for="GenreTwo" asp-items="Model.Genres" aria-describedby="basic-addon6">
+                        <option value="">- genre two -</option>/>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon2">Released before</span>
+                    </div>
+                    <input class="form-control" type="number" asp-for="YearUpper" placeholder="2021" aria-describedby="basic-addon2" />
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="basic-addon4">Score less than</span>
+                    </div>
+                    <input class="form-control" type="number" asp-for="ScoreUpper" placeholder="100" aria-describedby="basic-addon4" />
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-end">
+            <div class="col-4 m-2">
+                <button type="submit" class="btn btn-info">Search</button>
+            </div>
+        </div>
+    </form>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.Movies[0].Name)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Movies[0].Year)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Movies[0].Score)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Movies[0].Genres)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Movies)
+            {
+                <tr>
+                    <td>
+                        <a href="https://www.metacritic.com/movie/@item.UrlName">
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </a>
+                        - 
+                        <a href="https://www.flicks.co.nz/search/?q=@item.Name">[Flicks]</a>
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Year)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Score)
+                    </td>
+                    <td>
+                        @if (item.Genres != null)
+                        {
+                            <span>@string.Join(", ", item.Genres)</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    @{
+        if (!Model.Movies.Any())
+        {
+            <p>No mobies</p>
+        }
+    }
+</div>
