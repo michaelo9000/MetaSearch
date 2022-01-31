@@ -83,6 +83,8 @@
                 <th>
                     @Html.DisplayNameFor(model => model.Movies[0].Genres)
                 </th>
+                <th>
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -108,6 +110,15 @@
                             <span>@string.Join(", ", item.Genres)</span>
                         }
                     </td>
+                    <td>
+                        <button class="btn btn-primary" type="button" data-toggle="collapse"
+                                data-target="#@item.UrlName" aria-expanded="false" aria-controls="@item.UrlName">
+                            Cast & crew
+                        </button>
+                    </td>
+                </tr>
+                <tr class="collapse" id="@item.UrlName">
+                    <td colspan="5">peepeepee</td>
                 </tr>
             }
         </tbody>

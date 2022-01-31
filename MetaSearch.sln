@@ -5,9 +5,17 @@ VisualStudioVersion = 16.0.31702.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebScraper", "WebScraper\WebScraper.csproj", "{C939D549-926E-45CA-86E2-E2635A3982D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Site", "Site\Site.csproj", "{2F360A5D-BA19-4DAB-A1FC-02BDE3E1587B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Site", "Site\Site.csproj", "{2F360A5D-BA19-4DAB-A1FC-02BDE3E1587B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "Data\Data.csproj", "{209B63A1-CCD9-4637-8AC5-2DC4B17B1F1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data", "Data\Data.csproj", "{209B63A1-CCD9-4637-8AC5-2DC4B17B1F1A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9D0DDCD2-F102-478D-AB2E-5F181C253366}"
+	ProjectSection(SolutionItems) = preProject
+		log 30.01.22.TXT = log 30.01.22.TXT
+		todo.TXT = todo.TXT
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core", "Core\Core.csproj", "{C13D7218-CDA6-40DE-B286-482488E2A4AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +35,10 @@ Global
 		{209B63A1-CCD9-4637-8AC5-2DC4B17B1F1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{209B63A1-CCD9-4637-8AC5-2DC4B17B1F1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{209B63A1-CCD9-4637-8AC5-2DC4B17B1F1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C13D7218-CDA6-40DE-B286-482488E2A4AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C13D7218-CDA6-40DE-B286-482488E2A4AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C13D7218-CDA6-40DE-B286-482488E2A4AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C13D7218-CDA6-40DE-B286-482488E2A4AC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,20 @@
+
+scrape the rest
+
+paginate results
+
+more details
+    expando box with cast, director(s), writer(s) which are links
+
+accounts
+seen
+to-watch
+
+sort by
+
+
+filter out seen
+promote to-watch
+
+
+Dynamic number of genres filter

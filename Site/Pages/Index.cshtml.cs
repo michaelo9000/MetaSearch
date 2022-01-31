@@ -8,12 +8,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Data.Queries;
 
 namespace Site.Pages
 {
     public class IndexModel : PageModel
     {
         private readonly DatabaseClient _dbClient;
+
+        private const int _pageResultCount = 50;
 
         // Display properties
         public List<Movie> Movies { get; set; }
@@ -36,28 +39,8 @@ namespace Site.Pages
         public IndexModel()
         {
             _dbClient = new DatabaseClient();
-            // TODO fill this list.
-            Genres = new SelectList(new List<string>() 
-            { 
-                "Action",
-                "Adventure",
-                "Animation", 
-                "Biography",
-                "Comedy", 
-                "Crime",
-                "Documentary", 
-                "Drama",
-                "Family",
-                "Horror",
-                "Music",
-                "Mystery",
-                "News",
-                "Romance",
-                "Sci-Fi",
-                "Thriller", 
-                "War", 
-                "History"
-            });
+
+            Genres = new SelectList(Consts.Genres);
         }
 
         public async Task OnGetAsync()
@@ -67,7 +50,9 @@ namespace Site.Pages
             if (ScoreUpper == 0)
                 ScoreUpper = 100;
 
-            Movies = await _dbClient.GetMovies(GenreOne, GenreTwo, ScoreLower, ScoreUpper, YearLower, YearUpper);
+            var query = new MovieQuery(GenreOne, GenreTwo, ScoreLower, ScoreUpper, YearLower, YearUpper, 1, _pageResultCount);
+
+            Movies = await _dbClient.GetMovies(query);
         }
     }
 }

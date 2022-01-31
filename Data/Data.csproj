@@ -8,4 +8,8 @@
     <PackageReference Include="google.cloud.firestore" Version="2.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj" />
+  </ItemGroup>
+
 </Project>

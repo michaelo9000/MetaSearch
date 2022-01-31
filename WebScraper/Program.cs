@@ -1,7 +1,9 @@
-﻿using Data;
+﻿using Core;
+using Data;
 using Data.Models;
 using HtmlAgilityPack;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,127 +13,118 @@ namespace WebScraper
 {
     class Program
     {
-        const string metacriticUrl = "https://www.metacritic.com";
-        const string pageBaseUrl = metacriticUrl + "/browse/movies/score/metascore/all/filtered?page=";
+        const int _sleepTime = 20;
 
         // CONFIG FOR INCREMENTAL SCRAPING
         // Keep these numbers set to grab the next movie that needs storing.
+        // Both numbers are one-based, so they should never be zero.
         const int _skipTo = 1;
-        const int _pageNumber = 65;
+        const int _pageNumber = 1;
+
+        const bool _useGenreCompleteThreshold = false;
+        const int _genreCompleteThreshold = 5;
+
+        static string _currentGenre;
+
+        static string[] _completedGenres = new string[] { "Action" };
 
         static async Task Main(string[] args)
         {
-            HtmlWeb web = new HtmlWeb();
             DatabaseClient dbClient = new DatabaseClient();
 
-            var pageCount = _pageNumber;
-
-            while (pageCount < 146)
+            ThreadPool.QueueUserWorkItem(new WaitCallback((object index) => WriteGenre()));
+            Console.ReadLine();
+            
+            foreach (var genreName in Consts.Genres)
             {
-                // Pages are zero-based in the query string, but not in the UI. 
-                HtmlNode movieListPage = web.Load($"{pageBaseUrl}{pageCount - 1}").DocumentNode;
-
-                var movieLinkNodes = movieListPage
-                    .SelectNodes("//a[@class='title']");
-
-                var moviePaths = movieLinkNodes?
-                    .SelectMany(i => i.Attributes)
-                    .Where(i => i.Name == "href")
-                    .Select(i => i.Value);
-
-                var pageStartTime = DateTime.Now;
-
-                if (_skipTo > 1)
-                    moviePaths = moviePaths.Skip(_skipTo - 1);
-
-                var movieCount = _skipTo;
-
-                foreach (var path in moviePaths)
+                if (_completedGenres.Contains(genreName))
                 {
-                    var startTime = DateTime.Now;
-
-                    var movieData = new Movie();
-                    movieData.UrlName = path.Split('/')[2];
-
-                    var url = $"{metacriticUrl}{path}/details";
-                    var moviePageRequest = await web.LoadFromWebAsync(url);
-                    var moviePage = moviePageRequest.DocumentNode;
-
-                    if (!moviePage.HasChildNodes)
-                    {
-                        Log("Received malformed document data. Waiting 15 seconds and trying again.");
-                        Thread.Sleep(15000);
-                        moviePageRequest = await web.LoadFromWebAsync(url);
-                        moviePage = moviePageRequest.DocumentNode;
-                    }
-
-                    movieData.Score = Convert.ToInt32(moviePage.SelectNodeText("span", "metascore_w"));
-
-                    var titleSection = moviePage.SelectSingleNodeContains("div", "product_page_title");
-                    movieData.Name = titleSection.SelectSingleNode("//h1").InnerHtml;
-
-                    var releaseDateArray = titleSection
-                        .SelectSingleNode("//span[@class='release_date']")
-                        .Elements("span")
-                        .FirstOrDefault(i => !i.Attributes.Any(a => a.Name == "class"))
-                        .InnerText
-                        .Split(',');
-
-                    movieData.Year = releaseDateArray.Length > 1 ?
-                        Convert.ToInt32(releaseDateArray[1])
-                        :
-                        DateTime.Today.Year + 1;
-
-                    var detailsTable = moviePage.SelectSingleNode("//table[@class='details']").FirstChild;
-                    movieData.Genres = detailsTable.GetDataArrayFromDetailsTable("genres");
-                    movieData.Languages = detailsTable.GetDataArrayFromDetailsTable("languages");
-                    movieData.Runtime = detailsTable
-                        .GetDataFromDetailsTable("runtime")
-                        ?.TrimToIntAndConvert();
-
-                    var creditsSection = moviePage
-                        .SelectSingleNode("//div[@class='credits_list']");
-
-                    var directorElements = creditsSection.GetCreditElements("Director");
-                    movieData.DirectorNames = directorElements?.Select(i => i.InnerText.Trim().Replace("\\n", "")).ToArray();
-                    movieData.DirectorUrlNames = directorElements?.GetCreditUrls();
-
-                    var writerElements = creditsSection.GetCreditElements("Writer");
-                    movieData.WriterNames = writerElements?.Select(i => i.InnerText.Trim().Replace("\\n", "")).ToArray();
-                    movieData.WriterUrlNames = writerElements?.GetCreditUrls();
-
-                    var castElements = creditsSection.GetCreditElements("Principal Cast");
-                    movieData.CastNames = castElements?.Select(i => i.InnerText.Trim().Replace("\\n", "")).ToArray();
-                    movieData.CastUrlNames = castElements?.GetCreditUrls();
-
-                    await dbClient.AddMovie(movieData);
-
-                    Log($"Stored #{movieCount.ToString("D2")}: {movieData.Name}.");
-                    LogTimeDiff(startTime);
-
-                    movieCount++;
+                    Logger.Log($"Already completed {genreName} genre apparently. Skipping!");
                 }
 
-                Log($"Completed page {pageCount}.");
-                LogTimeDiff(pageStartTime);
+                _currentGenre = genreName;
 
-                Log("Sleeping for 20 seconds to give metacritic a break.");
-                Thread.Sleep(20000);
+                Logger.Log($"Beginning scraping {genreName} movies, newest first.");
 
-                pageCount++;
+                var alreadyStoredCount = 0;
+                var pageCount = _pageNumber;
+
+                // Need this over simply breaking because I need to be able to break the while from within the foreach.
+                var keepWhilin = true;
+                while (keepWhilin)
+                {
+                    var pageStartTime = DateTime.Now;
+
+                    var moviePaths = WebDataProcessor.GetMoviePathList(pageCount, genreName);
+
+                    if (moviePaths == null || !moviePaths.Any())
+                    {
+                        Logger.Log($"No movie links found on page {pageCount}! Either this is the last page (yay, change genres), or something went wrong.");
+                        break;
+                    }
+
+                    if (_skipTo > 1)
+                        moviePaths = moviePaths.Skip(_skipTo - 1);
+
+                    var movieCount = _skipTo;
+
+                    foreach (var path in moviePaths)
+                    {
+                        var startTime = DateTime.Now;
+
+                        try
+                        {
+                            var moviePage = await WebDataProcessor.GetMoviePageDataAsync(path);
+                            var movieData = WebDataProcessor.GetMovieFromPageData(moviePage, path);
+                            var alreadyStored = await dbClient.AddMovie(movieData);
+                            Logger.Log($"{pageCount.ToString("D2")} - {movieCount.ToString("D2")}: {movieData.Name}.");
+
+                            if (alreadyStored) alreadyStoredCount++;
+                            if (_useGenreCompleteThreshold && alreadyStoredCount > _genreCompleteThreshold)
+                            {
+                                // TODO this might not work due to genre crossover - i.e. Adventure movies are usually also Action movies, so after storing the new Action movies none of the Adventure movies will be checked.
+                                // Need to supplement with a createddate on records and createddate must be in the past before the movie is considered 'already stored'?
+                                Logger.Log($"Encountered {alreadyStoredCount} {genreName} movies that have been stored before. I have been configured to believe that this is the end of the new movies for this genre, so on to the next!");
+                                keepWhilin = false;
+                                break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Log($"Failed on page {pageCount} (one-based), movie {movieCount}");
+                            Logger.Log($"Exception: {e.Message}");
+                            Logger.Log($"Stacktrace: {e.StackTrace}");
+                            keepWhilin = false;
+                            break;
+                        }
+
+                        Logger.LogTimeDiff(startTime);
+                        movieCount++;
+                    }
+
+                    Logger.Log($"Completed page {pageCount}.");
+                    Logger.LogTimeDiff(pageStartTime);
+
+                    Logger.Log($"Sleeping for {_sleepTime} seconds to give metacritic a break.");
+                    Thread.Sleep(_sleepTime * 1000);
+
+                    pageCount++;
+                }
             }
 
+            Console.WriteLine("END");
             Console.ReadLine();
         }
-
-        public static void Log(string message)
+        
+        public static async void WriteGenre()
         {
-            Console.WriteLine($"{DateTime.Now.ToLongTimeString()}: {message}");
-        }
-
-        public static void LogTimeDiff(DateTime time)
-        {
-            Log($"Took {Math.Round((DateTime.Now - time).TotalMilliseconds / 1000, 2)} seconds.");
+            // Never stop writing this.
+            while (Logger.LastLine != $"NOTICE: Searching {_currentGenre} movies!")
+            {
+                Logger.Log($"NOTICE: Searching {_currentGenre} movies!");
+                Thread.Sleep(60000);
+            }
+            Logger.Log("NOTICES ended.");
         }
     }
 }
